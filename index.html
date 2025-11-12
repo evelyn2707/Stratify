@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- Metadatos básicos del documento -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stratify</title>
+    
+    <!-- Links a CDNs (Content Delivery Network) para Bootstrap -->
+    <!-- Esto nos trae todo el CSS de Bootstrap para que se vea bonito sin esfuerzo -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Iconos de Bootstrap (ej. los que podríamos usar en botones) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Estilos CSS personalizados -->
+    <style>
+        /* Estilo para las miniaturas de imágenes en las tarjetas */
+        .thumb { height: 70px; object-fit: cover; border-radius: .35rem; }
+        /* Un grid para apilar las miniaturas (hasta 3) */
+        .thumbs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+        /* Imagen de fondo para el body */
+
+        /* Estilo para el botón de instalación de la PWA */
+        #btnInstall {
+            position: fixed; right: 16px; bottom: 16px; /* Fijo en la esquina */
+            padding: 12px 16px; border: 0; border-radius: 10px;
+            background: #0d6efd; color: white; font-size: 14px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(0,0,0,.2); z-index: 9999; /* Sombrita y encima de todo */
+        }
+        /* El botón empieza oculto */
+        #btnInstall[hidden] { display: none; }
+    </style>
+
+    <!-- Metadatos para PWA (Progressive Web App) -->
+    <!-- El "manifest" le dice al navegador cómo debe comportarse la app si se "instala" -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <!-- Color de la barra de estado en móviles -->
+    <meta name="theme-color" content="#0d6efd" />
+    <!-- Icono para dispositivos Apple -->
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <!-- Le dice a iOS que esta web se puede comportar como app nativa -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+</head>
+<body class="bg-light"> <!-- El "bg-light" es una clase de Bootstrap -->
+    
+    <!-- Contenido principal -->
+    <div class="container py-5">
+        <div class="text-center mb-4">
+            <h1 class="display-4 text-primary mb-3 pb-4 fw-bold">Stratify</h1>
+            <!-- Este botón abre el Modal (la ventana emergente) -->
+            <button type="button" class="btn btn-info btn-lg" data-bs-toggle="modal" data-bs-target="#productoModal">
+                Añadir nuevo servicio
+            </button>
+            <!-- Botón para limpiar los datos guardados -->
+            <button id="clearAll" class="btn btn-danger text-dark btn-lg ms-2">
+                Limpiar todo (LocalStorage)
+            </button>
+        </div>
+        
+        <!-- Aquí es donde nuestro JavaScript va a "pintar" las tarjetas de los servicios -->
+        <div id="productosContainer" class="row g-4"></div>
+    </div>
+
+    <!--Modal: Formulario (Ventana emergente de Bootstrap) -->
+    <div class="modal fade" id="productoModal" tabindex="-1" aria-labelledby="productoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="productoModalLabel">Registro de Nuevo Servicio</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-dark text-white" style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(fondo.png);background-size: cover; background-position: center; background-repeat: no-repeat;">
+                    <!-- El formulario tiene un ID para que podamos "escuchar" su evento 'submit' -->
+                    <form id="productoForm">
+                        <div class="row g-3">
+                            <!-- Campos del formulario -->
+                            <div class="col-md-6">
+                                <label for="claveProducto" class="form-label">Clave*</label>
+                                <input type="text" class="form-control" id="claveProducto" placeholder="Clave de producto" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="nombreProducto" class="form-label">Nombre del servicio*</label>
+                                <input type="text" class="form-control" id="nombreProducto" placeholder="Ej: Fondo de WindowsXP" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="estadoProducto" class="form-label">Categoria*</label>
+                                <select class="form-select" id="estadoProducto" required>
+                                    <option value="">Seleccionar categoria</option>
+                                    <option value="podcast">Podcast</option>
+                                    <option value="publicidad">Publicidad-Digital</option>
+                                    <option value="sitios">Sitios-web</option>
+                                    <option value="auto">Automatizacion</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="precio" class="form-label">Precio*</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="precio" placeholder="0.00" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="Inversion" class="form-label">Inversion minima*</label>
+                                <!-- El ID 'stock' se usa para 'Inversion minima', es un poco confuso pero funciona -->
+                                <input type="number" class="form-control" id="stock" placeholder="Ej: 1000" required>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="descripcion" rows="3" placeholder="Describe el servicio..."></textarea>
+                            </div>
+                            
+                            <!-- Input para subir archivos. 'multiple' permite seleccionar varios. -->
+                            <div class="col-12">
+                                <label for="imagenes" class="form-label">Imágenes (puedes subir una o varias)</label>
+                                <input type="file" id="imagenes" class="form-control" accept="image/*" multiple />
+                                <div class="form-text text-white">Se guardan de forma temporal como Data URLs en el LocalStorage (límite aproximado total 5-10 MB por sitio).</div>
+                            </div>
+                        </div>
+                    </form>
+                </div> 
+                <div class="modal-footer bg-dark">
+                    <button type="button" class="btn btn-secondary text-dark" data-bs-dismiss="modal">Cancelar</button>
+                    <!-- El atributo 'form="productoForm"' conecta este botón con el <form> de arriba -->
+                    <button type="submit" form="productoForm" class="btn btn-info">Guardar Servicio</button>
+                </div>
+            </div>
+        </div>
+    </div> 
+
+    <!-- Script de Bootstrap (JavaScript) -->
+    <!-- Poner los scripts al final del body hace que la página cargue visualmente más rápido -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Lógica de la aplicación (¡El corazón de la app!) -->
+    <script>
+        // --- VARIABLES GLOBALES ---
+        
+        // Este array va a contener todos nuestros objetos "producto" en memoria RAM.
+        let productos = [];
+        
+        // La "llave" que usamos para guardar en localStorage. Como una variable en el navegador.
+        const LS_KEY = 'productos';
+
+        // Inicializamos el componente Modal de Bootstrap para poder controlarlo (ej. modal.hide())
+        const modal = new bootstrap.Modal(document.getElementById('productoModal'));
+
+        // --- FUNCIONES CORE ---
+
+        /**
+         * Guarda el array 'productos' completo en el LocalStorage.
+         * OJO: LocalStorage solo guarda texto (strings), así que convertimos
+         * el array de objetos a un string formato JSON.
+         */
+        function saveToLS() {
+            // JSON.stringify() convierte [ {obj1}, {obj2} ] en un string "[{obj1},{obj2}]"
+            localStorage.setItem(LS_KEY, JSON.stringify(productos));
+        }
+
+        /**
+         * Carga los datos desde LocalStorage al array 'productos'.
+         * Se ejecuta solo una vez, cuando la página carga.
+         */
+        function loadFromLS() {
+            try {
+                // Leemos el string guardado en LocalStorage
+                const raw = localStorage.getItem(LS_KEY);
+                // JSON.parse() hace lo opuesto: convierte el string JSON de vuelta a un array de objetos.
+                // Si 'raw' es null (no hay nada guardado), 'productos' queda como un array vacío [].
+                productos = raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                // Si el JSON guardado está corrupto (raro, pero pasa), 
+                // JSON.parse() falla. Capturamos el error.
+                console.warn('LocalStorage corrupto, se reinicia.', e);
+                productos = []; // Empezamos de cero
+                localStorage.removeItem(LS_KEY); // Borramos lo corrupto
+            }
+        }
+
+        /**
+         * Función "helper" para formatear números como dinero (MXN).
+         * Ej: 1500.5  -> "1,500.50"
+         */
+        function currencyMX(n) {
+            return Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        /**
+         * Lee una lista de archivos (de un <input type="file">) y los convierte
+         * a formato DataURL (un string base64 que representa la imagen).
+         * Esta función es ASÍNCRONA porque leer archivos toma tiempo.
+         * Devuelve una Promesa que se resuelve con un array de objetos { name, type, dataURL }.
+         */
+        function readFilesAsDataURLs(filelist) {
+            // Convertimos el FileList (que no es un array real) a un array
+            const files = Array.from(filelist || []);
+            
+            // Usamos .map() para crear un array de Promesas. Una por cada archivo.
+            const readers = files.map( (file) => new Promise((resolve, reject) => {
+                const fr = new FileReader(); // El "lector" de archivos del navegador
+                // Cuando termine de leer...
+                fr.onload = () => resolve({ name: file.name, type: file.type, dataURL: fr.result });
+                // Si hay un error...
+                fr.onerror = reject;
+                // Empezamos a leer el archivo como DataURL (esto es asíncrono)
+                fr.readAsDataURL(file);
+            }) );
+            
+            // Promise.all() espera a que TODAS las promesas (lecturas) terminen
+            return Promise.all(readers);
+        }
+
+        /**
+         * "Renderiza" (dibuja) las tarjetas de los productos en el HTML.
+         * Borra lo que hay y lo vuelve a crear desde el array 'productos'.
+         */
+        function renderProjects() {
+            const container = document.getElementById('productosContainer');
+            container.innerHTML = ''; // Limpiamos el contenedor
+
+            // Mapeo de valores (del <select>) a clases de Bootstrap (para los colores)
+            const estadoClasses = {
+                podcast: 'info',
+                'publicidad': 'primary',
+                'sitios': 'warning',
+                auto: 'success'
+            };
+            // Mapeo de valores a texto legible
+            const estadoTexto = {
+                podcast: 'Podcast',
+                'publicidad': 'Publicidad-Digital',
+                'sitios': 'Sitios-web',
+                auto: 'Automatizacion'
+            };
+
+            // Iteramos sobre cada producto en nuestro array global
+            productos.forEach((producto, idx) => {
+                // Creamos un <div> para la columna de Bootstrap
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4 mb-4';
+
+                // --- Creamos el HTML para las miniaturas ---
+                // (producto.imagenes || []) -> si no hay imagenes, usa un array vacío
+                // .slice(0, 3) -> solo toma las primeras 3
+                const thumbs = (producto.imagenes || []).slice(0, 3)
+                    .map((img) => `<img class="thumb w-100" src="${img.dataURL}" alt="${img.name}">`)
+                    .join(''); // Une los <img> en un solo string
+
+                // --- Lógica para la "etiqueta" (badge) de categoría ---
+                const badgeClase = estadoClasses[producto.estado] || 'secondary'; // 'secondary' si no lo encuentra
+                const badgeTexto = estadoTexto[producto.estado] || 'N/A';
+
+                // --- Creamos el HTML interno de la tarjeta (la "Card") ---
+                // Usamos "template literals" (comillas `) para meter variables en el HTML
+                col.innerHTML = `
+                    <div class="card h-100 shadow-sm border-0 rounded-3">
+                        ${(producto.imagenes && producto.imagenes.length) ? `
+                            <div class="thumbs-grid p-2">${thumbs}</div>
+                        ` : `
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted" style="height: 70px;">
+                                <small>Sin imágenes</small>
+                            </div>
+                        `}
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title fw-bold mb-0">${producto.nombre || 'Sin Nombre'}</h5>
+                                <span class="badge bg-${badgeClase} text-dark rounded-pill">${badgeTexto}</span>
+                            </div>
+                            <h6 class="card-subtitle mb-2 text-muted">${producto.clave || 'Sin Clave'}</h6>
+                            <p class="card-text small">${(producto.descripcion || 'Sin descripción').substring(0, 100)}...</p>
+                            
+                            <div class="d-flex justify-content-between">
+                                <div class="fw-bold fs-5 text-primary">
+                                    $${currencyMX(producto.precio)}
+                                </div>
+                                <div class="text-end">
+                                    <small class="d-block text-muted">Inversión min.</small>
+                                    <span class="fw-bold">${producto.stock}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                // Añadimos la columna (con la tarjeta adentro) al contenedor principal
+                container.appendChild(col);
+            });
+        }
+        
+        /**
+         * Muestra una notificación "Toast" de Bootstrap en la esquina.
+         * Es una función "helper" para dar feedback al usuario.
+         */
+        function showToast(message, type = 'success') {
+            // Busca el contenedor de toasts, o lo crea si no existe.
+            const toastContainer = document.getElementById('toastContainer') || document.createElement('div');
+            if (!toastContainer.id) {
+                toastContainer.id = 'toastContainer';
+                toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                toastContainer.style.zIndex = '1055'; // Encima de casi todo
+                document.body.appendChild(toastContainer);
+            }
+
+            // Creamos el HTML para este toast específico
+            const toastId = 'toast-' + Date.now();
+            const toastHTML = `
+                <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            // Lo insertamos en el contenedor
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            
+            // Usamos la API de Bootstrap para inicializarlo y mostrarlo
+            const toastEl = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastEl, { delay: 3000 }); // Se oculta a los 3 seg
+            toast.show();
+            // Cuando se oculte, lo borramos del DOM para no acumular basura
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
+        // --- EVENT LISTENERS (La app reacciona a eventos) ---
+
+        /**
+         * Evento: Click en "Guardar" (submit) del formulario.
+         * Esta función es ASÍNCRONA (async) porque tiene que 'await' (esperar)
+         * a que la función readFilesAsDataURLs() termine de leer las imágenes.
+         */
+        document.getElementById('productoForm').addEventListener('submit', async function(e) {
+            // Prevenimos que el formulario se envíe de la forma tradicional (recargando la página)
+            e.preventDefault();
+
+            // --- 1. Leer datos del formulario ---
+            
+            // Leemos los archivos del input
+            const inputFiles = document.getElementById('imagenes').files;
+            let imagenes = [];
+            try {
+                // Esperamos (await) a que todos los archivos se lean y conviertan a DataURL
+                imagenes = await readFilesAsDataURLs(inputFiles);
+            } catch (err) {
+                // Si falla la lectura de archivos (ej. uno corrupto)
+                console.error('Error al leer imágenes', err);
+                showToast('Error al cargar imágenes', 'danger');
+                return; // Detenemos la ejecución del guardado
+            }
+
+            // Creamos un objeto 'producto' con todos los datos del formulario
+            const producto = {
+                id: crypto.randomUUID(), // Un ID único universal
+                nombre: document.getElementById('nombreProducto').value.trim(),
+                clave: document.getElementById('claveProducto').value.trim(),
+                precio: parseFloat(document.getElementById('precio').value),
+                estado: document.getElementById('estadoProducto').value,
+                stock: document.getElementById('stock').value.trim(), // 'stock' es Inversion minima
+                descripcion: document.getElementById('descripcion').value.trim(),
+                imagenes, // El array de imágenes que acabamos de leer
+            };
+
+            // --- 2. Lógica de guardado (con manejo de error de cuota) ---
+            
+            // Añadimos el producto (con imágenes) al array en RAM
+            productos.push(producto);
+            
+            try {
+                // INTENTO 1: Guardar en LocalStorage (CON imágenes)
+                saveToLS(); 
+                // Si no falló, actualizamos la vista
+                renderProjects();
+                
+                // Si todo salió bien:
+                this.reset(); // Limpiamos el formulario
+                modal.hide(); // Ocultamos la ventana modal
+                showToast('Servicio guardado correctamente');
+
+            } catch (e) {
+                // ¡ERROR! Algo salió mal al guardar
+                
+                // Primero, quitamos el producto que acabamos de añadir al array en RAM,
+                // porque no se pudo guardar.
+                productos.pop(); 
+
+                // Verificamos si el error es el de "Cuota Excedida"
+                if (e.name === 'QuotaExceededError') {
+                    // Es el error de cuota. Las imágenes pesan demasiado.
+                    console.warn('Quota Exceeded. Intentando guardar sin imágenes.');
+                    
+                    // INTENTO 2: Guardar SIN imágenes
+                    showToast('Error: Imágenes muy pesadas. Se guardará sin ellas.', 'warning');
+                    
+                    // Le quitamos las imágenes al objeto
+                    producto.imagenes = []; 
+                    
+                    // Lo volvemos a añadir al array en RAM (ahora sin imágenes)
+                    productos.push(producto); 
+                    
+                    try {
+                        // Guardamos la versión sin imágenes
+                        saveToLS(); 
+                        renderProjects(); // Actualizamos la vista
+
+                        // Limpiamos y cerramos
+                        this.reset();
+                        modal.hide();
+                        showToast('Servicio guardado (sin imágenes)');
+                    } catch (finalError) {
+                        // Si *aún así* falla, es un error grave.
+                        productos.pop(); // Lo quitamos de RAM
+                        console.error('Error final al guardar en LocalStorage:', finalError);
+                        showToast('Error crítico al guardar. Intenta limpiar el LocalStorage.', 'danger');
+                    }
+
+                } else {
+                    // Fue otro tipo de error (no el de cuota)
+                    console.error('Error desconocido al guardar:', e);
+                    showToast('Ocurrió un error inesperado al guardar.', 'danger');
+                }
+            }
+        });
+
+
+        /**
+         * Evento: 'DOMContentLoaded'
+         * Se dispara cuando el HTML ha sido cargado y "parseado" por el navegador.
+         * Es el punto de entrada de nuestra aplicación.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Cargamos los datos guardados (si hay)
+            loadFromLS();
+            // 2. Dibujamos las tarjetas en la pantalla
+            renderProjects();
+
+            // 3. Añadimos el listener al botón "Limpiar todo"
+            const clearButton = document.getElementById('clearAll');
+            if (clearButton) {
+                clearButton.addEventListener('click', () => {
+                    // Nota: confirm() puede estar bloqueado en iframes, 
+                    // por eso lo quitamos, pero la lógica iría aquí.
+                    console.warn("Se ha solicitado limpiar el LocalStorage.");
+                    
+                    // if (confirm('¿Seguro que deseas borrar...?')) {
+                        productos = []; // Vaciamos el array en RAM
+                        saveToLS();     // Guardamos (un array vacío) en LocalStorage
+                        renderProjects(); // Volvemos a dibujar (ahora no mostrará nada)
+                        showToast('LocalStorage limpiado');
+                    // }
+                });
+            }
+        });
+    </script>
+
+    <!-- Scripts para la PWA (Instalación) -->
+    
+    <!-- Botón que se mostrará para instalar -->
+    <button id="btnInstall" hidden>Instalar app</button>
+
+    <script>
+    // --- Lógica del SERVICE WORKER ---
+    // El SW es un script que corre en segundo plano. Sirve para
+    // cachear archivos y que la app funcione offline.
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js') // El archivo sw.js debe existir
+            .then(reg => console.log('SW registrado:', reg.scope))
+            .catch(err => console.warn('SW fallo:', err));
+        });
+    }
+
+    // --- Lógica del A2HS (Add to Home Screen / Botón de Instalar) ---
+    
+    // Variable global para guardar el "evento" de instalación
+    let deferredPrompt = null;
+    
+    // El navegador dispara este evento SI la app cumple los requisitos de PWA
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault(); // Prevenimos que el navegador muestre su propio mini-banner
+        deferredPrompt = e; // Guardamos el evento para usarlo después
+        const btn = document.getElementById('btnInstall');
+        if (btn) btn.hidden = false; // Mostramos nuestro botón personalizado
+    });
+
+    // Escuchamos el click en NUESTRO botón de instalar
+    document.addEventListener('click', async (e) => {
+        if (e.target && e.target.id === 'btnInstall') {
+            if (!deferredPrompt) return; // Si no hay evento guardado, no hacer nada
+            
+            e.target.disabled = true; // Deshabilitar el botón
+            deferredPrompt.prompt(); // Mostramos el diálogo de instalación del navegador
+            
+            // Esperamos a que el usuario elija "Instalar" o "Cancelar"
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('Instalación:', outcome); // 'accepted' o 'dismissed'
+            
+            deferredPrompt = null; // El evento solo se puede usar una vez
+            e.target.hidden = true; // Ocultamos nuestro botón
+        }
+    });
+
+    // Evento que se dispara si la app se instala correctamente
+    window.addEventListener('appinstalled', (e) => {
+        console.log('App instalada', e);
+    });
+    </script>
+</body>
+</html>

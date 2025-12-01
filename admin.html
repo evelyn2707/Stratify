@@ -1,0 +1,934 @@
+<!-- admin.html -->
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#ffffff">
+  <title>Stratify Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body { background:#0F141F; }
+    .thumb { object-fit: cover; height: 100px; border-radius: .5rem; }
+    .thumb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 0.5rem; }
+
+        /* Botón Servicios personalizado */
+    .btn-servicios {
+      border: 2px solid #b330ff;
+      color: #b330ff;
+      background: transparent;
+    }
+
+    .btn-servicios:hover {
+      background: #b330ff;
+      color: white;
+    }
+
+    /* Botón Paquetes personalizado */
+    .btn-paquetes {
+      border: 2px solid #17ff3e;
+      color: #17ff3e;
+      background: transparent;
+    }
+
+    .btn-paquetes:hover {
+      background: #17ff3e;
+      color: white;
+    }
+
+    .btn-solicitudes {
+      border: 2px solid #009bfa;
+      color: #009bfa;
+      background: transparent;
+    }
+
+    .btn-solicitudes:hover {
+      background: #009bfa;
+      color: white;
+    }
+  </style>
+</head>
+<body class="pb-5">
+
+  <nav class="navbar navbar-light border-bottom sticky-top" style="background:#0f141f;">
+    <div class="container">
+      <div class="d-flex align-items-center">
+        <a href="index.html" class="btn btn-outline-secondary btn-sm me-2">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <span class="navbar-brand mb-0 h1" style="color: #eb01c2;"> Stratify Admin</span>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-servicios" onclick="document.getElementById('productsContainer').scrollIntoView({behavior:'smooth'})">
+          Servicios
+        </button>
+        <button class="btn btn-paquetes" onclick="document.getElementById('paquetesContainer').scrollIntoView({behavior:'smooth'})">
+          Paquetes
+        </button>
+        <button id="btnSolicitudes" class="btn btn-solicitudes position-relative" onclick="document.getElementById('solicitudesContainer').scrollIntoView({behavior:'smooth'})">
+          Solicitudes
+          <span id="notifSolicitudes" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+            0
+          </span>
+        </button>
+
+      </div>
+
+      <!-- Botón hamburguesa -->
+      <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuOffcanvas" aria-controls="menuOffcanvas">
+        <i class="bi bi-list"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Offcanvas menú -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="menuOffcanvas" aria-labelledby="menuOffcanvasLabel" style="background:#0f141f; color:white;">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="menuOffcanvasLabel" style="color:#eb01c2;">Menú</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column gap-2">
+      <button class="btn w-100" style="background:#b330ff; color:white;" data-bs-toggle="modal" data-bs-target="#productoModal">
+        <i class="bi bi-plus-lg"></i> Nuevo Servicio
+      </button>
+      <button class="btn w-100" style="background:#17ff3e; color:white;" data-bs-toggle="modal" data-bs-target="#paqueteModal">
+        <i class="bi bi-plus-lg"></i> Nuevo Paquete
+      </button>
+      <a href="tienda.html" class="btn btn-outline-primary w-100">
+        <i class="bi bi-eye me-1"></i> Ver Tienda
+      </a>
+    </div>
+  </div>
+
+
+  <main class="container py-4">
+    <div id="alertConfig" class="alert alert-warning d-none">
+      <strong>Configura Firebase:</strong> Verifica la configuración en la consola.
+    </div>
+    <!-- Servicios -->
+    <section class="mb-5">
+      <h2 class="text-white text-center mb-4">Servicios</h2>
+      <div id="productsContainer" class="row g-4"></div>
+    </section>
+    <!-- Paquetes -->
+    <section class="mb-5">
+      <h2 class="text-white text-center mb-4">Paquetes</h2>
+      <div id="paquetesContainer" class="row g-4"></div>
+    </section>
+    <!-- Solicitudes -->
+    <section class="mb-5">
+      <h2 class="text-white text-center mb-4">Solicitudes</h2>
+      <div id="solicitudesContainer" class="row g-4"></div>
+    </section>
+  </main>
+
+
+<!-- Modal Producto -->
+<div class="modal fade" id="productoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:#0f141f; color:white;">
+      <div class="modal-header">
+        <h5 class="modal-title" style="color: #eb01c2;">Nuevo Servicio</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="productoForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre del Servicio *</label>
+              <input id="nombreProducto" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Precio (MXN) *</label>
+              <input type="number" step="0.01" id="precioProducto" class="form-control" required />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Descripción *</label>
+              <textarea id="descripcion" class="form-control" rows="3" required></textarea>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Responsable*</label>
+              <textarea id="responsable" class="form-control" required></textarea>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Imágenes del Producto</label>
+              <input type="file" id="imagenesProducto" class="form-control" accept="image/*" multiple />
+              <div class="form-text" style="color: #7e7e7e;">
+                Puedes seleccionar múltiples imágenes. Se subirán a Cloudinary.
+              </div>
+              <div id="previewImagenes" class="thumb-grid mt-2"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn" style="background:#b330ff; color:white;" type="submit" id="submitBtn">
+            <span class="spinner-border spinner-border-sm d-none" id="submitSpinner"></span>
+            Guardar Servicio
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal paquete -->
+<div class="modal fade" id="paqueteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:#0f141f; color:white;">
+      <div class="modal-header">
+        <h5 class="modal-title" style="color: #eb01c2;">Nuevo Paquete</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="paqueteForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre del Paquete *</label>
+              <input id="nombrePaquete" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Precio (MXN) *</label>
+              <input type="number" step="0.01" id="precioPaquete" class="form-control" required />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Descripción *</label>
+              <textarea id="descripcionPaquete" class="form-control" rows="3" required></textarea>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Servicios Incluidos*</label>
+              <div id="serviciosPaquete" class="form-check-container" style="max-height:200px; overflow-y:auto; border:1px solid #555; padding:0.5rem; border-radius:0.5rem;"></div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Imágenes del Paquete</label>
+              <input type="file" id="imagenesPaquete" class="form-control" accept="image/*" multiple />
+              <div class="form-text" style="color: #7e7e7e;">
+                Puedes seleccionar múltiples imágenes. Se subirán a Cloudinary.
+              </div>
+              <div id="previewImagenesPaquete" class="thumb-grid mt-2"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn" style="background:#17ff3e; color:white;" type="submit" id="submitBtnPaquete">
+            <span class="spinner-border spinner-border-sm d-none" id="submitSpinnerPaquete"></span>
+            Guardar Paquete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script type="module">
+/* ---------- Variables de edición globales ---------- */
+let editingProductId = null;
+let editingPaqueteId = null;
+
+/* ---------- Firebase config & imports ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDlyA18XufNSSnF0pv5pc1lQIRNXkLAJAY",
+  authDomain: "stratify-5cbc4.firebaseapp.com",
+  projectId: "stratify-5cbc4",
+  storageBucket: "stratify-5cbc4.firebasestorage.app",
+  messagingSenderId: "843493852132",
+  appId: "1:843493852132:web:e08e49ba0963e0ae73bdf1",
+  measurementId: "G-NSHKMCZ95V"
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { 
+  getFirestore, collection, addDoc, serverTimestamp,
+  onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, arrayRemove, where, getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+import { enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ---------- Offline persistence ---------- */
+enableIndexedDbPersistence(db)
+  .then(() => {
+    console.log("Persistencia offline habilitada");
+    showAlert("Modo offline disponible", "success");
+  })
+  .catch((err) => {
+    if (err.code == 'failed-precondition') {
+      console.log("Múltiples pestañas abiertas");
+    } else if (err.code == 'unimplemented') {
+      console.log("Navegador no soporta persistencia");
+    }
+  });
+
+/* ---------- Detectar conexión ---------- */
+function updateOnlineStatus() {
+  if (!navigator.onLine) {
+    showAlert("🔌 Modo offline activado - Trabajando localmente", "warning");
+  } else {
+    showAlert("🌐 Conectado - Sincronizando con servidor", "success");
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+/* ---------- Cloudinary ---------- */
+const cloudName = "datlgqrdx";
+const uploadPreset = "pwa_unsigned";
+
+/* ---------- Elementos DOM (ahora sí) ---------- */
+const modalProductoEl = document.getElementById('productoModal');
+const productoModalInstance = new bootstrap.Modal(modalProductoEl);
+
+const paqueteModalEl = document.getElementById('paqueteModal');
+const paqueteModalInstance = new bootstrap.Modal(paqueteModalEl);
+
+const form = document.getElementById('productoForm');
+const container = document.getElementById('productsContainer');
+const paqueteContainer = document.getElementById('paquetesContainer');
+
+const imagenesInput = document.getElementById('imagenesProducto');
+const previewDiv = document.getElementById('previewImagenes');
+
+const paqueteForm = document.getElementById('paqueteForm');
+const imagenesPaqueteInput = document.getElementById('imagenesPaquete');
+const previewPaqueteDiv = document.getElementById('previewImagenesPaquete');
+
+const serviciosSelect = document.getElementById('serviciosPaquete');
+
+const nombrePaquete = document.getElementById('nombrePaquete');
+const precioPaquete = document.getElementById('precioPaquete');
+const descripcionPaquete = document.getElementById('descripcionPaquete');
+
+const submitBtnProducto = document.getElementById('submitBtn');
+const submitSpinnerProducto = document.getElementById('submitSpinner');
+const submitBtnPaquete = document.getElementById('submitBtnPaquete');
+const submitSpinnerPaquete = document.getElementById('submitSpinnerPaquete');
+
+/* ---------- Helpers ---------- */
+function currencyMX(n){
+  return Number(n||0).toLocaleString('es-MX',{
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
+
+function showAlert(message, type) {
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+  alertDiv.style.zIndex = '1060';
+  alertDiv.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  document.body.appendChild(alertDiv);
+  
+  setTimeout(() => {
+    alertDiv.remove();
+  }, 5000);
+}
+
+/* ---------- Previews de imágenes ---------- */
+imagenesInput.addEventListener('change', function(e) {
+  previewDiv.innerHTML = '';
+  const files = Array.from(e.target.files);
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const img = document.createElement('img');
+      img.src = ev.target.result;
+      img.className = 'thumb w-100';
+      img.style.height = '80px';
+      previewDiv.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+});
+
+imagenesPaqueteInput.addEventListener('change', function(e) {
+  previewPaqueteDiv.innerHTML = '';
+  const files = Array.from(e.target.files);
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const img = document.createElement('img');
+      img.src = ev.target.result;
+      img.className = 'thumb w-100';
+      img.style.height = '80px';
+      previewPaqueteDiv.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+});
+
+/* ---------- Mapas locales para acceso rápido ---------- */
+let productosMap = new Map(); // id -> productoData
+let paquetesMap = new Map();  // id -> paqueteData
+
+/* ---------- Render Productos ---------- */
+function renderProducts(productos) {
+  container.innerHTML = '';
+  
+  if (productos.length === 0) {
+    container.innerHTML = `
+      <div class="col-12 text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <h4 class="text-muted mt-3">No hay productos</h4>
+        <p class="text-muted">Agrega tu primer producto haciendo clic en "Nuevo Producto"</p>
+      </div>
+    `;
+    return;
+  }
+  
+  productos.forEach(p => {
+    const col = document.createElement('div');
+    col.className = 'col-md-6 col-lg-4 mb-4';
+
+    const imagenesHTML = Array.isArray(p.imagenes) && p.imagenes.length > 0 
+      ? p.imagenes.map(url => `<img src="${url}" class="thumb" alt="${p.nombre}">`).join('')
+      : `<img src="${p.imagenUrl || 'https://via.placeholder.com/100x100?text=Sin+Imagen'}" class="thumb" alt="${p.nombre}">`;
+
+    col.innerHTML = `
+      <div class="card h-100 shadow-sm" style="background: transparent; border: 2px solid #b330ff; color: white;" >
+        <div class="card-body">
+          <div class="thumb-grid mb-3">
+            ${imagenesHTML}
+          </div>
+          <h5 class="card-title">${p.nombre}</h5>
+          <p class="card-text">${p.descripcion}</p>
+          <p class="card-text">
+            <strong>Precio:</strong> $${currencyMX(p.precio)}<br>
+            <strong>Responsable:</strong> ${p.responsable || ''}
+        </div>
+        <div class="card-footer">
+              <div class="d-flex gap-2">
+              <button class="btn flex-fill" style="background:#b330ff; color:white;" data-action="edit" data-id="${p.id}">
+                  <i class="bi bi-pencil-square"></i> Editar
+              </button>
+
+              <button class="btn flex-fill" style="background:#eb01c2; color:white;" data-action="delete" data-id="${p.id}">
+                  <i class="bi bi-trash3"></i> Eliminar
+              </button>
+              </div>
+        </div>
+      </div>`;
+    container.appendChild(col);
+  });
+
+  // Delete
+  container.querySelectorAll('[data-action="delete"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      if (id && confirm('¿Eliminar este producto?')) {
+        try {
+          await deleteDoc(doc(db, 'productos', id));
+          // limpiar referencias en paquetes
+          const paquetesQ = query(collection(db,'paquetes'), where('servicios', 'array-contains', id));
+          const paquetesSnap = await getDocs(paquetesQ);
+          const updates = [];
+          paquetesSnap.forEach(pd => {
+            updates.push(updateDoc(doc(db, 'paquetes', pd.id), {
+              servicios: arrayRemove(id)
+            }));
+          });
+          await Promise.all(updates);
+          showAlert('Producto eliminado y referencias actualizadas', 'success');
+        } catch(err) {
+          console.error("Error borrando producto:", err);
+          showAlert('Error al eliminar producto', 'danger');
+        }
+      }
+    });
+  });
+
+  // Edit
+  container.querySelectorAll('[data-action="edit"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      const producto = productosMap.get(id);
+      if (!producto) {
+        showAlert('Producto no encontrado', 'warning');
+        return;
+      }
+
+      editingProductId = id;
+
+      document.getElementById('nombreProducto').value = producto.nombre || '';
+      document.getElementById('precioProducto').value = producto.precio || '';
+      document.getElementById('descripcion').value = producto.descripcion || '';
+      document.getElementById('responsable').value = producto.responsable || '';
+
+      previewDiv.innerHTML = "";
+      if (producto.imagenes) {
+        producto.imagenes.forEach(url => {
+          const img = document.createElement("img");
+          img.src = url;
+          img.className = "thumb w-100";
+          img.style.height = "80px";
+          previewDiv.appendChild(img);
+        });
+      }
+
+      document.querySelector('#productoModal .modal-title').textContent = "Editar Servicio";
+      submitBtnProducto.textContent = "Guardar Cambios";
+
+      productoModalInstance.show();
+    });
+  });
+
+}
+
+/* ---------- Escucha productos (Firestore) ---------- */
+const productosRef = collection(db, 'productos');
+const q = query(productosRef, orderBy('createdAt','desc'));
+
+onSnapshot(q, (snap) => {
+  const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  productosMap.clear();
+  arr.forEach(p => productosMap.set(p.id, p));
+  renderProducts(arr);
+  updateServiciosSelect(arr);
+});
+
+/* ---------- Select de servicios para paquetes ---------- */
+function updateServiciosSelect(servicios) {
+  serviciosSelect.innerHTML = '';
+  servicios.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'form-check';
+
+    const input = document.createElement('input');
+    input.className = 'form-check-input';
+    input.type = 'checkbox';
+    input.id = 'servicio_' + s.id;
+    input.value = s.id;
+
+    const label = document.createElement('label');
+    label.className = 'form-check-label';
+    label.htmlFor = input.id;
+    label.textContent = s.nombre || '(sin nombre)';
+
+    div.appendChild(input);
+    div.appendChild(label);
+    serviciosSelect.appendChild(div);
+  });
+}
+
+/* ---------- Render Paquetes ---------- */
+function renderPaquete(paquetes) {
+  paqueteContainer.innerHTML = '';
+
+  if (paquetes.length === 0) {
+    paqueteContainer.innerHTML = `
+      <div class="col-12 text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <h4 class="text-muted mt-3">No hay paquetes</h4>
+        <p class="text-muted">Agrega tu primer paquete haciendo clic en "Nuevo Paquete"</p>
+      </div>
+    `;
+    paquetesMap.clear();
+    return;
+  }
+
+  paquetes.forEach(p => {
+    paquetesMap.set(p.id, p); // guardar en mapa
+
+    const col = document.createElement('div');
+    col.className = 'col-md-6 col-lg-4 mb-4';
+
+    const serviciosText = Array.isArray(p.servicios)
+      ? p.servicios.map(id => productosMap.get(id)?.nombre || "(servicio eliminado)").join(", ")
+      : "Ninguno";
+
+    const imagenesHTML = Array.isArray(p.imagenes) && p.imagenes.length > 0 
+      ? p.imagenes.map(url => `<img src="${url}" class="thumb" alt="${p.nombre}">`).join('')
+      : `<img src="${p.imagenUrl || 'https://via.placeholder.com/100x100?text=Sin+Imagen'}" class="thumb" alt="${p.nombre}">`;
+
+    col.innerHTML = `
+      <div class="card h-100 shadow-sm" style="background: transparent; border: 2px solid #17ff3e; color: white;">
+        <div class="card-body">
+          <div class="thumb-grid mb-3">${imagenesHTML}</div>
+
+          <h5 class="card-title">${p.nombre}</h5>
+          <p class="card-text">${p.descripcion}</p>
+
+          <p class="card-text">
+            <strong>Precio:</strong> $${currencyMX(p.precio)}<br>
+            <strong>Servicios:</strong> ${serviciosText}
+          </p>
+        </div>
+
+        <div class="card-footer">
+            <div class="d-flex gap-2">
+            <button class="btn flex-fill" style="background:#17ff3e; color:white;" data-action="edit" data-id="${p.id}">
+                <i class="bi bi-pencil-square"></i> Editar
+            </button>
+
+            <button class="btn flex-fill" style="background:#eb01c2; color:white;" data-action="delete" data-id="${p.id}">
+                <i class="bi bi-trash3"></i> Eliminar
+            </button>
+            </div>
+        </div>
+      </div>
+    `;
+
+    paqueteContainer.appendChild(col);
+  });
+
+  // Delete paquetes
+  paqueteContainer.querySelectorAll('[data-action="delete"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      if (id && confirm('¿Eliminar este paquete?')) {
+        try {
+          await deleteDoc(doc(db,'paquetes', id));
+          showAlert('Paquete eliminado', 'success');
+        } catch(err) {
+          console.error("Error eliminando paquete:", err);
+          showAlert('Error al eliminar paquete', 'danger');
+        }
+      }
+    });
+  });
+
+  // Edit paquetes
+  paqueteContainer.querySelectorAll('[data-action="edit"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      const p = paquetesMap.get(id);
+      if (!p) {
+        showAlert('Paquete no encontrado', 'warning');
+        return;
+      }
+
+      editingPaqueteId = id;
+
+      nombrePaquete.value = p.nombre || '';
+      precioPaquete.value = p.precio || '';
+      descripcionPaquete.value = p.descripcion || '';
+
+      // marcar checkboxes
+      Array.from(serviciosSelect.querySelectorAll("input")).forEach(chk => {
+        chk.checked = Array.isArray(p.servicios) && p.servicios.includes(chk.value);
+      });
+
+      // mostrar imágenes actuales
+      previewPaqueteDiv.innerHTML = "";
+      if (p.imagenes) {
+        p.imagenes.forEach(url => {
+          const img = document.createElement("img");
+          img.src = url;
+          img.className = "thumb w-100";
+          img.style.height = "80px";
+          previewPaqueteDiv.appendChild(img);
+        });
+      }
+
+      document.querySelector('#paqueteModal .modal-title').textContent = "Editar Paquete";
+      submitBtnPaquete.textContent = "Guardar Cambios";
+
+      paqueteModalInstance.show();
+    });
+  });
+
+}
+
+/* ---------- Escucha paquetes (Firestore) ---------- */
+const paqueteRef = collection(db, 'paquetes');
+const u = query(paqueteRef, orderBy('createdAt','desc'));
+
+onSnapshot(u, (snap) => {
+  const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderPaquete(arr);
+});
+
+   // MOSTRAR SOLICITUDES EN EL ADMIN
+  const solicitudesContainer = document.getElementById("solicitudesContainer");
+
+  // Leer solicitudes en tiempo real desde Firestore
+  const solicitudesRef = collection(db, "solicitudes");
+  const qSolicitudes = query(solicitudesRef, orderBy("fecha", "desc"));
+
+  const notifBadge = document.getElementById("notifSolicitudes");
+
+  function updateSolicitudBadge(snapshot) {
+    // Contar solicitudes no finalizadas
+    const count = snapshot.docs.filter(doc => doc.data().estatus !== "Finalizada").length;
+    
+    if (count > 0) {
+      notifBadge.textContent = count;
+      notifBadge.classList.remove("d-none");
+    } else {
+      notifBadge.classList.add("d-none");
+    }
+  }
+
+  onSnapshot(qSolicitudes, (snapshot) => {
+    updateSolicitudBadge(snapshot);
+    solicitudesContainer.innerHTML = ""; // limpiar contenedor
+
+    if (snapshot.empty) {
+      solicitudesContainer.innerHTML = `
+        <p class="text-center text-muted">No hay solicitudes registradas.</p>
+      `;
+      return;
+    }
+
+  snapshot.forEach((docu) => {
+    const s = docu.data();
+    const docId = docu.id;
+
+    // Convertir IDs de servicios a nombres usando productosMap
+    const serviciosHtml =
+      s.serviciosRequeridos && s.serviciosRequeridos.length > 0
+        ? s.serviciosRequeridos
+            .map(id => {
+              const producto = productosMap.get(id);
+              return `<span class="badge bg-primary me-1">${producto ? producto.nombre : "(servicio eliminado)"}</span>`;
+            })
+            .join("")
+        : `<span class="text-muted">No seleccionó servicios</span>`;
+
+    const otrosHtml = s.otrosServicios && s.otrosServicios.trim() !== ""
+        ? `<p><strong>Otros:</strong> ${s.otrosServicios}</p>`
+        : "";
+
+    const fechaTexto = s.fecha?.toDate
+      ? s.fecha.toDate().toLocaleString()
+      : "Sin fecha";
+
+    const card = document.createElement("div");
+    card.className = "col-md-4";
+
+    card.innerHTML = `
+      <div class="card h-100" style="background:#0f141f; color:white; border:1px solid #009bfa;">
+        <div class="card-body">
+          <h5 class="card-title" style="color:#009bfa;">${s.nombreEmpresa}</h5>
+
+          <p><strong style="color: #eb01c2;">Solicitante:</strong><br>${s.nombrePersona}</p>
+          <p><strong>Tel:</strong> ${s.telefono}</p>
+          <p><strong>Correo:</strong> ${s.correo}</p>
+
+          <p><strong style="color: #eb01c2;">Empresa:</strong></p>
+          <p><strong>Área:</strong> ${s.areaEmpresa}</p>
+          <p><strong>Descripción:</strong><br>${s.descripcionEmpresa}</p>
+
+          <hr style="border-color:#333;">
+
+          <p><strong style="color: #eb01c2;">Servicios Requeridos:</strong><br>${serviciosHtml}</p>
+          ${otrosHtml}
+
+          <p class="mt-2"><strong>Fecha:</strong> ${fechaTexto}</p>
+
+          <div class="mt-3">
+            <label for="estatus_${docId}" class="form-label"><strong>Estatus:</strong></label>
+            <select id="estatus_${docId}" class="form-select form-select-sm">
+              <option value="Enviada" ${s.estatus === "Enviada" ? "selected" : ""}>Enviada</option>
+              <option value="En proceso" ${s.estatus === "En proceso" ? "selected" : ""}>En proceso</option>
+              <option value="Finalizada">Finalizada</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+
+    solicitudesContainer.appendChild(card);
+
+    // Escuchar cambios de estatus
+    const selectEstatus = document.getElementById(`estatus_${docId}`);
+    selectEstatus.addEventListener("change", async (e) => {
+      const nuevoEstatus = e.target.value;
+      if (nuevoEstatus === "Finalizada") {
+        // eliminar la solicitud
+        try {
+          await deleteDoc(doc(db, "solicitudes", docId));
+          showAlert("Solicitud finalizada y eliminada", "success");
+        } catch (err) {
+          console.error("Error eliminando solicitud:", err);
+          showAlert("Error al eliminar solicitud", "danger");
+        }
+      } else {
+        // actualizar estatus en Firestore
+        try {
+          await updateDoc(doc(db, "solicitudes", docId), { estatus: nuevoEstatus });
+          showAlert(`Estatus actualizado a "${nuevoEstatus}"`, "success");
+        } catch (err) {
+          console.error("Error actualizando estatus:", err);
+          showAlert("Error al actualizar estatus", "danger");
+        }
+      }
+    });
+  });
+});
+
+/* ---------- Subida a Cloudinary (productos y paquetes) ---------- */
+async function uploadImagesToCloudinary(files, folder = "productos") {
+  const urls = [];
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+    formData.append("folder", folder);
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      if (data.secure_url) urls.push(data.secure_url);
+    } catch (err) {
+      console.error("Error subiendo imagen:", err);
+    }
+  }
+  return urls;
+}
+
+/* ---------- Submit producto (nuevo o editar) ---------- */
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const nombre = document.getElementById("nombreProducto").value.trim();
+  const precio = parseFloat(document.getElementById("precioProducto").value) || 0;
+  const descripcion = document.getElementById("descripcion").value.trim();
+  const responsable = document.getElementById("responsable").value.trim();
+
+  submitBtnProducto.disabled = true;
+  submitSpinnerProducto.classList.remove("d-none");
+
+  try {
+    let imageUrls = [];
+    const files = Array.from(imagenesInput.files || []);
+
+    if (files.length > 0) {
+      imageUrls = await uploadImagesToCloudinary(files, "productos");
+    }
+
+    if (editingProductId) {
+      const original = productosMap.get(editingProductId) || {};
+      if (files.length === 0) {
+        imageUrls = original.imagenes || [];
+      }
+      await updateDoc(doc(db, "productos", editingProductId), {
+        nombre,
+        precio,
+        descripcion,
+        responsable,
+        imagenes: imageUrls
+      });
+      showAlert("Servicio actualizado correctamente", "success");
+    } else {
+      await addDoc(collection(db, "productos"), {
+        nombre,
+        precio,
+        descripcion,
+        responsable,
+        imagenes: imageUrls,
+        createdAt: serverTimestamp()
+      });
+      showAlert("Servicio agregado", "success");
+    }
+
+    // reset
+    editingProductId = null;
+    form.reset();
+    previewDiv.innerHTML = "";
+    document.querySelector('#productoModal .modal-title').textContent = "Nuevo Servicio";
+    submitBtnProducto.textContent = "Guardar Servicio";
+    productoModalInstance.hide();
+
+  } catch (error) {
+    console.error("Error guardando el producto:", error);
+    showAlert("Error al guardar", "danger");
+  } finally {
+    submitBtnProducto.disabled = false;
+    submitSpinnerProducto.classList.add("d-none");
+  }
+});
+
+/* ---------- Submit paquete (nuevo o editar) ---------- */
+paqueteForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const nombre = nombrePaquete.value.trim();
+  const precio = parseFloat(precioPaquete.value) || 0;
+  const descripcionTxt = descripcionPaquete.value.trim();
+
+  const servicios = Array.from(document.querySelectorAll("#serviciosPaquete input:checked"))
+                .map(c => c.value);
+
+  submitBtnPaquete.disabled = true;
+  submitSpinnerPaquete.classList.remove("d-none");
+
+  try {
+    const files = Array.from(imagenesPaqueteInput.files || []);
+    const nuevasImagenes = files.length > 0 ? await uploadImagesToCloudinary(files, "paquetes") : [];
+
+    if (editingPaqueteId) {
+      const updateData = {
+        nombre,
+        precio,
+        descripcion: descripcionTxt,
+        servicios
+      };
+      if (nuevasImagenes.length > 0) updateData.imagenes = nuevasImagenes;
+
+      await updateDoc(doc(db, "paquetes", editingPaqueteId), updateData);
+      showAlert("Paquete actualizado correctamente", "success");
+
+      editingPaqueteId = null;
+      paqueteForm.reset();
+      previewPaqueteDiv.innerHTML = "";
+      document.querySelector('#paqueteModal .modal-title').textContent = "Nuevo Paquete";
+      submitBtnPaquete.textContent = "Guardar Paquete";
+      paqueteModalInstance.hide();
+      return;
+    }
+
+    // Nuevo paquete
+    const imagenesUrls = nuevasImagenes;
+    await addDoc(collection(db, "paquetes"), {
+      nombre,
+      precio,
+      descripcion: descripcionTxt,
+      servicios,
+      imagenes: imagenesUrls,
+      createdAt: serverTimestamp()
+    });
+
+    paqueteForm.reset();
+    previewPaqueteDiv.innerHTML = "";
+    paqueteModalInstance.hide();
+    showAlert("Paquete creado", "success");
+
+  } catch (err) {
+    console.error("Error guardando paquete:", err);
+    showAlert("Error al guardar paquete", "danger");
+  } finally {
+    submitBtnPaquete.disabled = false;
+    submitSpinnerPaquete.classList.add("d-none");
+  }
+});
+
+/* ---------- Service worker registro (si aplica) ---------- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(err => console.warn('sw err', err));
+}
+</script>
+
+</body>
+</html>

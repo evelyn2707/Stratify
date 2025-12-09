@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratify - Login & Registro</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+    /* Fondo y estilo general */
+    body {
+        background-color: #0f141f;
+        color: white;
+        font-family: 'Arial', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    h2 {
+        margin-bottom: 15px;
+        text-align: center;
+        color: #17ff3e;
+    }
+
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+        width: 100%;
+        max-width: 400px;
+        padding: 25px;
+        border-radius: 12px;
+        border: 2px solid #b330ff;
+        background: #0f141f;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    input {
+        padding: 10px 15px;
+        border-radius: 5px;
+        border: none;
+        outline: none;
+        font-size: 16px;
+        background: #1a1f2f;
+        color: white;
+    }
+
+    input::placeholder {
+        color: #ccc;
+    }
+
+    button {
+        padding: 10px 15px;
+        border-radius: 5px;
+        border: 2px solid;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: transparent;
+    }
+
+    #registerForm button {
+        border-color: #eb01c2;
+        color: #eb01c2;
+    }
+
+    #registerForm button:hover {
+        background-color: #eb01c2;
+        color: white;
+    }
+
+    #loginForm button {
+        border-color: #17ff3e;
+        color: #17ff3e;
+    }
+
+    #loginForm button:hover {
+        background-color: #17ff3e;
+        color: white;
+    }
+
+    #message {
+        text-align: center;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    @media (max-width: 450px) {
+        input, button {
+            font-size: 14px;
+            padding: 8px 12px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<h2>Bienvenido a Stratify</h2>
+<p style="text-align:center;">Regístrate o inicia sesión para continuar</p>
+
+<div class="form-container">
+
+    <!-- Registro -->
+    <form id="registerForm">
+        <input type="text" id="regName" placeholder="Nombre" required>
+        <input type="text" id="regPhone" placeholder="Número de teléfono" required>
+        <input type="email" id="regEmail" placeholder="Correo" required>
+        <input type="password" id="regPassword" placeholder="Contraseña" required>
+        <button type="submit">Registrarse</button>
+    </form>
+
+    <!-- Login -->
+    <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Correo" required>
+        <input type="password" id="loginPassword" placeholder="Contraseña" required>
+        <button type="submit">Iniciar Sesión</button>
+    </form>
+
+    <p id="message"></p>
+</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyDlyA18XufNSSnF0pv5pc1lQIRNXkLAJAY",
+    authDomain: "stratify-5cbc4.firebaseapp.com",
+    projectId: "stratify-5cbc4",
+    storageBucket: "stratify-5cbc4.firebasestorage.app",
+    messagingSenderId: "843493852132",
+    appId: "1:843493852132:web:e08e49ba0963e0ae73bdf1",
+    measurementId: "G-NSHKMCZ95V"
+};
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+function showMsg(text, color="orange") {
+    const msg = document.getElementById("message");
+    msg.textContent = text;
+    msg.style.color = color;
+}
+
+// Registro
+const registerForm = document.getElementById("registerForm");
+registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById("regName").value.trim();
+    const phone = document.getElementById("regPhone").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const password = document.getElementById("regPassword").value.trim();
+
+    if (!name || !email || !phone || !password) {
+        showMsg("Completa todos los campos", "red");
+        return;
+    }
+
+    try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const uid = userCredential.user.uid;
+
+        // Guardamos los datos junto con el UID
+        await db.collection("usuarios").doc(uid).set({
+            uid: uid,              // <-- guardamos UID
+            nombre: name,
+            email: email,
+            telefono: phone,
+            carrito: [],
+            compras: [],
+            solicitudes: []
+        });
+
+        showMsg("Usuario registrado correctamente ✔ Inicia sesión", "green");
+        registerForm.reset();
+    } catch (error) {
+        showMsg(error.message, "red");
+    }
+});
+
+// Login
+const loginForm = document.getElementById("loginForm");
+loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
+
+    if (!email || !password) {
+        showMsg("Completa todos los campos", "red");
+        return;
+    }
+
+    try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const uid = userCredential.user.uid;
+
+        const userDoc = await db.collection("usuarios").doc(uid).get();
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+
+            // Guardamos UID y email en localStorage para usar en tienda y pedidos
+            localStorage.setItem("stratifyUser", JSON.stringify({
+                uid: uid,
+                nombre: userData.nombre,
+                email: userData.email
+            }));
+
+            showMsg(`¡Bienvenido, ${userData.nombre}! Redirigiendo...`, "green");
+
+            setTimeout(() => {
+                window.location.href = "tienda.html";
+            }, 1000);
+        } else {
+            showMsg("No se encontró el perfil del usuario.", "red");
+        }
+    } catch (error) {
+        showMsg(error.message, "red");
+    }
+});
+</script>
+
+</body>
+</html>

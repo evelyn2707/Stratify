@@ -1,0 +1,717 @@
+<!-- tienda.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stratify Store</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#ffffff">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+
+        body { background:#0F141F; }
+
+        .product-img {
+            height: 200px;
+            object-fit: cover;
+            width: 100%;
+        }
+        .cart-item-img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 0.25rem;
+        }
+        .thumb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+        }
+        .thumb {
+            width: 100%;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 0.25rem;
+        }
+        #btnPaquetePersonalizado {
+            background: transparent;
+            color: #17ff3e;
+            border: 2px solid #17ff3e;
+        }
+
+        #btnPaquetePersonalizado:hover {
+            background: #17ff3e;
+            color: #ffffff;
+        }
+
+        .btn-custom {
+        width: 100%;
+        height: 50px;
+        margin: 8px 16px;
+        border: 2px solid transparent;
+        border-radius: 6px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        }
+
+        /* Colores personalizados */
+        .btn-carrito {
+            background: #b330ff;
+            color: white;
+            border-color: #b330ff;
+        }
+        .btn-carrito:hover {
+            background: transparent;
+            color: #b330ff;
+        }
+
+        .btn-solicitudes {
+            background: #17ff3e;
+            color: white;
+            border-color: #17ff3e;
+        }
+        .btn-solicitudes:hover {
+            background: transparent;
+            color: #17ff3e;
+        }
+
+        .btn-perfil {
+            background: transparent;
+            color: #009bfa;
+            border-color: #009bfa;
+        }
+        .btn-perfil:hover {
+            background: #009bfa;
+            color: white;
+        }
+        .btn-admin {
+            background: transparent; 
+            border-color: #eb01c2;
+            color: #eb01c2;
+        }
+        .btn-admin:hover {
+            background: #eb01c2;
+            color: white;
+        }
+        .status {
+            margin-top: 30px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-light border-bottom sticky-top" style="background:#0f141f;">
+        <div class="container d-flex align-items-center">
+
+            <span class="navbar-brand mb-0 h1" style="color: #eb01c2;"> Stratify Store</span>
+            <!-- Barra de búsqueda centrada -->
+            <form class="flex-grow-1 d-flex align-items-center" role="search" style="position: relative;">
+                <i class="bi bi-search"
+                style="position: absolute; left: 10px; color:#b330ff; font-size: 1.2rem;"></i>
+
+                <input id="searchInput"
+                    class="form-control ps-4"
+                    type="search"
+                    placeholder="  Buscar servicio..."
+                    aria-label="Buscar"
+                    style="background: transparent; color:white; border:1px solid #b330ff; padding-left: 35px;">
+
+                        <style>
+                            #searchInput::placeholder {
+                                color: #7e7e7e; /* color del placeholder */
+                                opacity: 1;      /* para que se vea bien */
+                            }
+                        </style>
+
+                <select id="filterTipo" class="form-select ms-2" style="width: auto; background: #0f141f; color:white; border:1px solid #b330ff;">
+                    <option value="todos" style="color: #009bfa;" selected>Todos</option>
+                    <option value="producto" style="color: #b330ff;">Servicios</option>
+                    <option value="paquete" style="color: #17ff3e;">Paquetes</option>
+                </select>
+            </form>
+            <!-- Botón hamburguesa -->
+            <button class="btn btn-outline-secondary ms-2"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#menuOffcanvas">
+                <i class="bi bi-list" style="font-size:1.5rem;"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div id="status" class="status" style="display: none;">
+        <span id="statusText"></span>
+    </div>
+    <div style="
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #009bfa;
+">
+    REGISTRATE O INICIA SESIÓN
+</div>
+
+
+    <!-- MENÚ HAMBURGUESA -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="menuOffcanvas"
+        style="background:#0f141f; border-left:2px solid #17ff3e; color:white;">
+
+        <div class="offcanvas-header">
+            <h5 style="color:#eb01c2;">Menú</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+
+        <a href="login.html" class="bi bi-person-circle btn-perfil btn-custom position-relative">Iniciar sesión</a>
+
+        <button onclick="adminLogin()" class="btn-admin btn-custom position-relative">Modo Administrador</button>
+    </div>
+
+    <div class="container mt-4">
+        <div id="paquetePersonalizadoContainer" class="mt-3 mb-4 text-center"></div>
+        <div id="productos" class="row"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script type="module">
+
+        // Configuración Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlyA18XufNSSnF0pv5pc1lQIRNXkLAJAY",
+            authDomain: "stratify-5cbc4.firebaseapp.com",
+            projectId: "stratify-5cbc4",
+            storageBucket: "stratify-5cbc4.firebasestorage.app",
+            messagingSenderId: "843493852132",
+            appId: "1:843493852132:web:e08e49ba0963e0ae73bdf1",
+            measurementId: "G-NSHKMCZ95V"
+        };
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { 
+            getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const statusDiv = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
+        let deferredPrompt;
+
+        // HABILITAR PERSISTENCIA OFFLINE DE FIRESTORE
+        import { enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        enableIndexedDbPersistence(db)
+          .then(() => {
+            console.log("Persistencia offline habilitada - Tienda");
+          })
+          .catch((err) => {
+            console.log("Persistencia no disponible en este contexto");
+          });
+
+        const productosDiv = document.getElementById("productos");
+        const carritoUl = document.getElementById("lista-carrito");
+        const totalSpan = document.getElementById("total");
+        const pagarBtn = document.getElementById("pagar");
+        const cartBadge = document.getElementById("cart-badge");
+        const limpiarBtn = document.getElementById("limpiar-carrito");
+        let productosData = [];
+
+        // FUNCIÓN PARA MOSTRAR ALERTAS
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            alertDiv.style.zIndex = '1060';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // DETECCIÓN DE CONEXIÓN MEJORADA
+        function updateOnlineStatus() {
+            if (!navigator.onLine) {
+                showAlert("Modo offline activado", "warning");
+                // Verificar si tenemos datos cacheados
+                const cache = localStorage.getItem('productosCache');
+                if (!cache) {
+                    showAlert("Conéctate primero a internet para cargar productos", "danger");
+                }
+            } else {
+                showAlert("Conectado - Sincronizando", "success");
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+
+            //detecta la pwa instalada
+    function isPWAInstalled() {
+            // iOS
+            if (window.navigator.standalone === true) return true;
+
+            // Android / Desktop
+            if (window.matchMedia('(display-mode: standalone)').matches) return true;
+
+            return false;
+        }
+
+        // Ocultar el botón si ya está instalada
+        if (isPWAInstalled()) {
+            statusDiv.style.display = 'none';
+        }
+
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => {
+                    console.log('Service Worker registrado');
+
+                    // Solo mostrar mensaje si NO está instalada
+                    if (!isPWAInstalled()) {
+                        showStatus('App lista para instalar', 'green');
+                    }
+                })
+                .catch(error => {
+                    console.log('Error SW:', error);
+                    showStatus('Sin funcionalidad offline', 'orange');
+                });
+        } else {
+            showStatus('Service Worker no soportado', 'red');
+        }
+
+        // Evento que aparece cuando se puede instalar
+        window.addEventListener('beforeinstallprompt', (e) => {
+            if (isPWAInstalled()) return; // No mostrar nada si ya está instalada
+
+            e.preventDefault();
+            deferredPrompt = e;
+
+            showStatus('Haz clic aquí para instalar la app', 'blue');
+            statusDiv.style.cursor = 'pointer';
+            statusDiv.onclick = installPWA;
+        });
+
+        // Cuando la app ya se instaló
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA instalada');
+            showStatus('App instalada', 'green');
+
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 1500);
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        showStatus('Instalando...', 'green');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        function showStatus(message, color) {
+            if (isPWAInstalled()) return; // Evitar mostrar mensajes si ya está instalada
+
+            statusText.textContent = message;
+            statusDiv.style.display = 'flex';
+            statusDiv.style.alignItems = 'center';
+            statusDiv.style.justifyContent = 'center';
+            statusDiv.style.height = '50px';         // Igual que los botones del menú
+            statusDiv.style.width = 'calc(100% - 32px)'; // Igual ancho con márgenes
+            statusDiv.style.margin = '8px 16px';
+            statusDiv.style.borderRadius = '6px';
+            statusDiv.style.fontWeight = 'bold';
+            statusDiv.style.cursor = 'pointer';
+            statusDiv.style.textAlign = 'center';
+            statusDiv.style.zIndex = '1050';
+            statusDiv.style.background = color === 'green' ? '#d4edda' :
+                                        color === 'red' ? '#f8d7da' :
+                                        color === 'orange' ? '#fff3cd' : '#cce7ff';
+            statusDiv.style.color = color === 'green' ? '#155724' :
+                                    color === 'red' ? '#721c24' :
+                                    color === 'orange' ? '#856404' : '#004085';
+        }
+
+        //busqueda
+        document.getElementById("searchInput").addEventListener("input", filtrarProductos);
+        document.getElementById("filterTipo").addEventListener("change", filtrarProductos);
+
+        function filtrarProductos() {
+            const texto = document.getElementById("searchInput").value.toLowerCase().trim();
+            const tipo = document.getElementById("filterTipo").value;
+
+            const filtrados = productosData.filter(p => {
+                const coincideTexto = p.nombre.toLowerCase().includes(texto) ||
+                                    p.descripcion.toLowerCase().includes(texto) ||
+                                    (p.responsable && p.responsable.toLowerCase().includes(texto)) ||
+                                    (p.servicios && Array.isArray(p.servicios) && p.servicios.join(', ').toLowerCase().includes(texto));
+                const coincideTipo = tipo === "todos" || p.tipo === tipo;
+
+                return coincideTexto && coincideTipo;
+            });
+
+            renderProductos(filtrados);
+        }
+
+        const listaSolicitudesUl = document.getElementById("lista-solicitudes");
+
+        // Función para obtener nombre de servicios por id
+        async function obtenerNombreServicios(ids) {
+            if (!Array.isArray(ids)) return [];
+            const nombres = [];
+            for (const id of ids) {
+                try {
+                    const snap = await getDoc(doc(db, "productos", id));
+                    if (snap.exists()) nombres.push(snap.data().nombre);
+                    else nombres.push("Servicio no encontrado");
+                } catch {
+                    nombres.push("Error");
+                }
+            }
+            return nombres;
+        }
+       
+        // Cargar productos desde Firestore CON SOPORTE OFFLINE
+        let productosCache = [];
+        let paquetesCache = [];
+
+        async function cargarProductos() {
+            // Primero intentar cargar desde cache si está offline
+            const cache = localStorage.getItem('productosCache');
+            if (cache && !navigator.onLine) {
+                productosData = JSON.parse(cache);
+                renderProductos(productosData);
+                showAlert("Modo offline - Datos cacheados", "info");
+                return;
+            }
+
+            const productosRef = collection(db, 'productos');
+            const paquetesRef = collection(db, 'paquetes');
+
+            const qProductos = query(productosRef, orderBy('createdAt', 'desc'));
+            const qPaquetes = query(paquetesRef, orderBy('createdAt', 'desc'));
+
+            // Observadores independientes
+            onSnapshot(qProductos, snapshotProductos => {
+                const productosList = snapshotProductos.docs.map(doc => {
+                    const data = doc.data();
+                    return { 
+                        id: doc.id,
+                        tipo: 'producto',
+                        nombre: data.nombre || 'Sin nombre',
+                        precio: Number(data.precio) || 0,
+                        descripcion: data.descripcion || 'Sin descripción',
+                        imagenes: data.imagenes || [],
+                        imagenUrl: data.imagenUrl || data.imagenes?.[0] || 'https://via.placeholder.com/300x200?text=Imagen+No+Disponible',
+                        responsable: data.responsable || 'Sin responsable',
+                        stock: Number(data.stock) || 0,
+                        createdAt: data.createdAt || null
+                    };
+                });
+
+                productosCache = productosList;
+                productosData = mergeAndSort(productosCache, paquetesCache);
+                renderProductos(productosData);
+                localStorage.setItem('productosCache', JSON.stringify(productosData));
+            });
+            onSnapshot(qPaquetes, async snapshotPaquetes => {
+                const listaPaquetes = [];
+
+                for (const docSnap of snapshotPaquetes.docs) {
+                    const data = docSnap.data();
+
+                    const nombresServicios = await obtenerNombreServicios(data.servicios || []);
+
+                    listaPaquetes.push({
+                        id: docSnap.id,
+                        tipo: "paquete",
+                        nombre: data.nombre || "Sin nombre",
+                        precio: Number(data.precio) || 0,
+                        descripcion: data.descripcion || "Sin descripción",
+                        imagenes: data.imagenes || [],
+                        imagenUrl: (data.imagenUrl || data.imagenes?.[0] || "https://via.placeholder.com/300")
+                            + `?v=${data.updatedAt?.toMillis?.() || Date.now()}`,
+                        servicios: data.servicios || [],
+                        serviciosNombres: nombresServicios,
+                        stock: Number(data.stock) || 0,
+                        createdAt: data.createdAt || null
+                    });
+                }
+
+                paquetesCache = listaPaquetes;
+
+                // Mezclar productos + paquetes ya listos
+                productosData = mergeAndSort(productosCache, paquetesCache);
+
+                renderProductos(productosData);
+
+                localStorage.setItem("productosCache", JSON.stringify(productosData));
+            });
+
+            // Cargar servicios (productos) en el checklist del modal personalizado
+            async function cargarServiciosPersonalizados() {
+                const contenedor = document.getElementById("servPersonalizados");
+                contenedor.innerHTML = `<p class="text-center">Cargando servicios...</p>`;
+
+                try {
+                    const ref = collection(db, "productos"); // servicios = productos
+                    const qServicios = query(ref, orderBy("nombre", "asc"));
+
+                    onSnapshot(qServicios, (snapshot) => {
+                        contenedor.innerHTML = ""; // limpiar
+
+                        if (snapshot.empty) {
+                            contenedor.innerHTML = `<p class="text-center text-muted">No hay servicios registrados</p>`;
+                            return;
+                        }
+
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+
+                            const item = `
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                          type="checkbox" 
+                                          value="${doc.id}" 
+                                          id="serv-${doc.id}">
+                                    <label class="form-check-label" for="serv-${doc.id}">
+                                        ${data.nombre}
+                                    </label>
+                                </div>
+                            `;
+                            contenedor.innerHTML += item;
+                        });
+                    });
+
+                } catch (e) {
+                    contenedor.innerHTML = `<p class="text-danger">Error al cargar servicios</p>`;
+                    console.error("Error cargando servicios:", e);
+                }
+            }
+
+            // Detectar cuando se abre el modal y cargar servicios
+            const personalizadoModal = document.getElementById("personalizadoModal");
+
+            personalizadoModal.addEventListener("show.bs.modal", () => {
+                cargarServiciosPersonalizados();
+            });
+        }
+
+        // Función para mezclar y ordenar por createdAt más reciente arriba
+        function mergeAndSort(lista1 = [], lista2 = []) {
+            return [...lista1, ...lista2].sort((a, b) => {
+                const timeA = a.createdAt?.toMillis?.() || 0;
+                const timeB = b.createdAt?.toMillis?.() || 0;
+                return timeB - timeA; // ↓ más nuevo arriba
+            });
+        }
+
+        function mostrarSinConexion() {
+            productosDiv.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-wifi-off display-4"></i>
+                        <h4 class="mt-3">Sin conexión</h4>
+                        <p>No hay datos cacheados disponibles.</p>
+                        <p>Conéctate a internet para cargar productos por primera vez.</p>
+                        <button class="btn btn-primary" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i> Reintentar
+                        </button>
+                        <a href="index.html" class="btn btn-outline-secondary ms-2">
+                            <i class="bi bi-house"></i> Volver al Inicio
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProductos(productos) {
+            productosDiv.innerHTML = '';
+            
+            if (productos.length === 0) {
+                productosDiv.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle display-4"></i>
+                            <h4 class="mt-3">No hay productos disponibles</h4>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            productos.forEach(producto => {
+                const div = document.createElement("div");
+                div.classList.add("col-md-4", "mb-4");
+
+                const imagenesHTML = producto.imagenes && producto.imagenes.length > 1 
+                    ? `<div class="thumb-grid">
+                        ${producto.imagenes.slice(0, 4).map(url => 
+                        `<img src="${url}" class="thumb" style="cursor:pointer"
+                                onclick="verImagen('${url}')" 
+                                alt="${producto.nombre}">`
+                        ).join('')}
+                        ${producto.imagenes.length > 4 
+                            ? `<div class="thumb bg-light text-center d-flex align-items-center justify-content-center">
+                                <small>+${producto.imagenes.length - 4}</small>
+                            </div>` 
+                            : ''}
+                    </div>` 
+                    : '';
+
+                const borderColor = producto.tipo === 'producto' ? '#b330ff' : '#17ff3e';
+
+                // Texto extra según si es servicio o paquete
+                let detalle = '';
+                if (producto.tipo === 'producto') {
+                    detalle = producto.responsable || 'Sin responsable';
+                } else if (producto.tipo === 'paquete') {
+                    detalle = Array.isArray(producto.serviciosNombres)
+                        ? producto.serviciosNombres.join(', ')
+                        : 'Sin servicios';
+                }
+
+                div.innerHTML = `
+                    <div class="card h-100 shadow-sm"
+                        style="background-color: transparent; border: 2px solid ${borderColor}; color: white">
+
+                        <img src="${producto.imagenUrl}" 
+                            class="product-img card-img-top"
+                            style="cursor:pointer"
+                            onclick="verImagen('${producto.imagenUrl}')"
+                            alt="${producto.nombre}"
+                            onerror="this.src='https://via.placeholder.com/300x200?text=Imagen+No+Disponible'">
+
+                        ${imagenesHTML}
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">${producto.nombre}</h5>
+
+                            <p class="card-text flex-grow-1">
+                                ${producto.descripcion}
+                            </p>
+
+                            <p class="card-text">
+                                <strong style="color: #b330ff;" class="h5">
+                                    $${producto.precio.toFixed(2)}
+                                </strong>
+                            </p>
+
+                            <p class="card-text">
+                                <small class="text-light">
+                                    ${detalle}
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                `;
+
+                productosDiv.appendChild(div);
+            });
+        }
+
+            window.verImagen = function (url) {
+        const producto = productosData.find(p => p.imagenes.includes(url) || p.imagenUrl === url);
+        const imagenes = producto.imagenes?.length > 0 ? producto.imagenes : [url];
+
+        const carouselInner = document.getElementById("carousel-images");
+        carouselInner.innerHTML = "";
+
+        imagenes.forEach((img, index) => {
+            carouselInner.innerHTML += `
+                <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                    <img src="${img}" class="d-block w-100 rounded" style="max-height: 80vh; object-fit: contain;">
+                </div>
+            `;
+        });
+
+        const modal = new bootstrap.Modal(document.getElementById("imageModal"));
+        modal.show();
+    };
+
+        //Contraseña predeterminada del modo administrador
+        const ADMIN_PASSWORD = "12345"; // cámbiala
+
+        window.adminLogin = function() {
+            const pass = prompt("Ingresa la contraseña de administrador:");
+            if (pass === ADMIN_PASSWORD) {
+                localStorage.setItem("isAdmin", "true");
+                window.location.href = "admin.html";
+            } else if (pass !== null) {
+                alert("Contraseña incorrecta ❌");
+            }
+        };
+
+        // INICIAR CARGA DE PRODUCTOS
+        cargarProductos();
+
+    </script>
+
+        <!-- Modal con carrusel -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background:#0f141f; border: 2px solid #b330ff;">
+        <div class="modal-header">
+            <h5 class="modal-title" style="color:#eb01c2;">Vista de imágenes</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+
+        </div>
+
+        <div class="modal-body">
+            <div id="carouselProducto" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner" id="carousel-images"></div>
+
+            <!-- Controles -->
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselProducto" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselProducto" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+            </div>
+        </div>
+
+        </div>
+    </div>
+    </div>
+
+</body>
+<footer class="mt-5 p-4 text-center" 
+        style="background:#0F141F; border-top:2px solid #17ff3e; color:white;">
+    <h5 style="color:#b330ff;">Contacto Stratify</h5>
+    <p class="mb-1">
+        <i class="bi bi-envelope-fill" style="color:#eb01c2;"></i>
+        contacto@stratify.com
+    </p>
+    <p class="mb-1">
+        <i class="bi bi-telephone-fill" style="color:#17ff3e;"></i>
+        +52 555 123 4567
+    </p>
+    <p class="mb-3">
+        <i class="bi bi-instagram" style="color:#009bfa;"></i>
+        @stratify.digital
+    </p>
+    <small style="color:#888;">© 2025 Stratify — Impulso Digital</small>
+</footer>
+</html>
